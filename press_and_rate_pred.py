@@ -9,7 +9,6 @@ from keras.layers import Dense
 from keras.layers import LSTM
  
 # load dataset
-# period1-trp for period 1
 # the whole code is predicting the pressure, the dataset is [Time, Rate Pressure]
 dataframe = read_csv('path')
 dataset = dataframe.values
@@ -56,7 +55,7 @@ model.add(LSTM(10, input_shape=(train_X.shape[1], train_X.shape[2])))
 model.add(Dense(1))
 model.compile(loss='mae', optimizer='adam')
 # model.fit will match the training inputs X to the training outputs (labels) y
-history = model.fit(train_X, train_Y, nb_epoch=10, batch_size=10, validation_data=(test_X, test_Y), verbose=2, shuffle=False)
+history = model.fit(train_X, train_Y, nb_epoch=500, batch_size=50, validation_data=(test_X, test_Y), verbose=2, shuffle=False)
 # plot the learning
 plt.plot(history.history['loss'], label='Training loss')
 plt.plot(history.history['val_loss'], label='Testing loss')
@@ -77,29 +76,24 @@ rmse = sqrt(mean_squared_error(test_Y, y_pred))
 print('Test RMSE: %.3f' % rmse)
 
 #invert scaling for train predictions
-inv_ytrain = concatenate((ytrain, train_X), axis=1)
+inv_ytrain = concatenate((train_X, ytrain), axis=1)
 inv_ytrain = scaler.inverse_transform(inv_ytrain)
-inv_ytrain = inv_ytrain[:,0]
+inv_ytrain = inv_ytrain[:,2]
 # invert scaling for test predictions
-inv_y_pred = concatenate((y_pred, test_X), axis=1)
+inv_y_pred = concatenate((test_X, y_pred), axis=1)
 inv_y_pred = scaler.inverse_transform(inv_y_pred)
-inv_y_pred = inv_y_pred[:,0]
-# invert scaling for actual
-test_Y = test_Y.reshape((len(test_Y), 1))
-inv_y = concatenate((test_Y, test_X), axis=1)
-inv_y = scaler.inverse_transform(inv_y)
-inv_y = inv_y[:,0]
+inv_y_pred = inv_y_pred[:,2]
 
-#period1-trp for period 1
+#create trainig and testing values for plotting
 time_test = read_csv('path', usecols = [0])
 time_test = time_test.values
 time_test  = time_test[2022:]
 
-pressure_test = read_csv('path', usecols = [1])
+pressure_test = read_csv('path', usecols = [2])
 pressure_test = pressure_test.values
 pressure_test = pressure_test[2022:]
 
-rate_test = read_csv('path', usecols = [2])
+rate_test = read_csv('path', usecols = [1])
 rate_test = rate_test.values
 rate_test = rate_test[2022:]
 
@@ -107,20 +101,23 @@ time_train = read_csv('path', usecols = [0])
 time_train = time_train.values
 time_train  = time_train[:2022]
 
-pressure_train = read_csv('path', usecols = [1])
+pressure_train = read_csv('path', usecols = [2])
 pressure_train = pressure_train.values
 pressure_train = pressure_train[:2022]
 
-rate_train = read_csv('path', usecols = [2])
+rate_train = read_csv('path', usecols = [1])
 rate_train = rate_train.values
 rate_train = rate_train[:2022]
 
+#plot all training values
 plt.plot(time_train, pressure_train, 'g')
 plt.plot(time_train, rate_train, 'b')
+plt.plot(time_train, inv_ytrain, 'k', label = 'Train pred')
+#plot all testing values
 plt.plot(time_test, rate_test, 'b')
 plt.plot(time_test, pressure_test, 'g', label = 'Pressure')
 plt.plot(time_test, inv_y_pred, 'r', label = 'Test pred')
-plt.plot(time_train, inv_ytrain, 'k', label = 'Train pred')
+
 
 plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=3, mode="expand", borderaxespad=0.)
 plt.grid(True)
